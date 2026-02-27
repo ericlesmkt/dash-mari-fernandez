@@ -18,7 +18,6 @@ interface BrazilMapProps {
 export default function BrazilMap({ activeState, onStateClick, data, activeMetric }: BrazilMapProps) {
   const parseValue = (val: string) => parseFloat(String(val).replace(/\./g, "").replace(",", "."));
   
-  // Função para abreviar números no mapa (evita quebrar o layout)
   const abbreviateNum = (val: string) => {
     const n = parseValue(val);
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -30,8 +29,8 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
   const minValues = { impressions: 0, visualizations: 0, cost: 0, cpv: 0.01, cpm: 1.71 };
 
   return (
-    <div className="relative w-full h-[550px] bg-[#080808] rounded-[40px] border border-zinc-900 overflow-hidden cursor-grab active:cursor-grabbing">
-      <ComposableMap projection="geoMercator" projectionConfig={{ scale: 1050, center: [-54, -15] }} className="w-full h-full">
+    <div className="relative w-full h-[600px] cursor-grab active:cursor-grabbing">
+      <ComposableMap projection="geoMercator" projectionConfig={{ scale: 1100, center: [-54, -15] }} className="w-full h-full">
         <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={10}>
           <Geographies geography={brazilTopoJson}>
             {({ geographies }) => geographies.map((geo) => {
@@ -41,16 +40,16 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
               
               const getHeatmapColor = () => {
                 if (isActive) return "#ffffff"; 
-                if (!stateData) return "#151515";
+                if (!stateData) return "rgba(255,255,255,0.05)";
                 const val = parseValue(stateData[activeMetric]);
                 
                 let intensity;
                 if (activeMetric === 'cpv' || activeMetric === 'cpm') {
                   const range = maxValues[activeMetric] - minValues[activeMetric];
                   intensity = range === 0 ? 0.8 : 1 - ((val - minValues[activeMetric]) / range);
-                  intensity = Math.max(0.2, Math.min(1, intensity));
+                  intensity = Math.max(0.25, Math.min(1, intensity));
                 } else {
-                  intensity = Math.max(0.2, Math.min(1, val / maxValues[activeMetric]));
+                  intensity = Math.max(0.25, Math.min(1, val / maxValues[activeMetric]));
                 }
                 
                 return `rgba(255, 90, 0, ${intensity})`; 
@@ -58,10 +57,11 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
 
               return (
                 <Geography key={geo.rsmKey} geography={geo} onClick={() => onStateClick(stateId)}
+                  className="transition-all duration-300 outline-none"
                   style={{
-                    default: { fill: getHeatmapColor(), stroke: "#000", strokeWidth: 0.4, outline: "none" },
-                    hover: { fill: "#ff7a33", stroke: "#fff", strokeWidth: 2, cursor: "pointer", outline: "none" },
-                    pressed: { fill: "#cc4800", outline: "none" },
+                    default: { fill: getHeatmapColor(), stroke: "rgba(0,0,0,0.5)", strokeWidth: 0.5 },
+                    hover: { fill: "#ff7a33", stroke: "#fff", strokeWidth: 2, cursor: "pointer" },
+                    pressed: { fill: "#cc4800" },
                   }}
                 />
               );
@@ -78,8 +78,8 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
 
             return (
               <Marker key={id} coordinates={coords}>
-                <text y={-6} textAnchor="middle" fill="#fff" fontSize={11} className="font-black pointer-events-none drop-shadow-2xl uppercase italic">{id}</text>
-                <text y={6} textAnchor="middle" fill="#ffd1b3" fontSize={8} className="font-black pointer-events-none drop-shadow-2xl italic">{displayValue}</text>
+                <text y={-8} textAnchor="middle" fill="#fff" fontSize={12} className="font-black pointer-events-none drop-shadow-2xl uppercase italic tracking-tighter">{id}</text>
+                <text y={8} textAnchor="middle" fill="#ffd1b3" fontSize={8} className="font-black pointer-events-none drop-shadow-2xl italic opacity-90">{displayValue}</text>
               </Marker>
             );
           })}
