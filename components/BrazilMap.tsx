@@ -17,15 +17,22 @@ interface BrazilMapProps {
 
 export default function BrazilMap({ activeState, onStateClick, data, activeMetric }: BrazilMapProps) {
   const parseValue = (val: string) => parseFloat(String(val).replace(/\./g, "").replace(",", "."));
+  
+  // Função para abreviar números no mapa (evita quebrar o layout)
+  const abbreviateNum = (val: string) => {
+    const n = parseValue(val);
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+    return val;
+  };
 
-  // Escalas baseadas nos dados reais do Google Ads
   const maxValues = { impressions: 9835264, visualizations: 1133198, cost: 21858.19, cpv: 0.02, cpm: 2.52 };
   const minValues = { impressions: 0, visualizations: 0, cost: 0, cpv: 0.01, cpm: 1.71 };
 
   return (
-    <div className="relative w-full h-[550px] bg-[#0c0c0c] rounded-3xl border border-zinc-900 overflow-hidden cursor-grab active:cursor-grabbing">
-      <ComposableMap projection="geoMercator" projectionConfig={{ scale: 1000, center: [-54, -15] }} className="w-full h-full">
-        <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={8}>
+    <div className="relative w-full h-[550px] bg-[#080808] rounded-[40px] border border-zinc-900 overflow-hidden cursor-grab active:cursor-grabbing">
+      <ComposableMap projection="geoMercator" projectionConfig={{ scale: 1050, center: [-54, -15] }} className="w-full h-full">
+        <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={10}>
           <Geographies geography={brazilTopoJson}>
             {({ geographies }) => geographies.map((geo) => {
               const stateId = String(geo.properties.HASC_1 || geo.id || "").replace("BR.", "").replace("BR-", "");
@@ -34,17 +41,16 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
               
               const getHeatmapColor = () => {
                 if (isActive) return "#ffffff"; 
-                if (!stateData) return "#1a1a1a";
+                if (!stateData) return "#151515";
                 const val = parseValue(stateData[activeMetric]);
                 
                 let intensity;
-                // INVERSÃO DE LÓGICA: Para custo (CPV/CPM), menores valores brilham mais (melhor ROI)
                 if (activeMetric === 'cpv' || activeMetric === 'cpm') {
                   const range = maxValues[activeMetric] - minValues[activeMetric];
                   intensity = range === 0 ? 0.8 : 1 - ((val - minValues[activeMetric]) / range);
-                  intensity = Math.max(0.15, Math.min(1, intensity));
+                  intensity = Math.max(0.2, Math.min(1, intensity));
                 } else {
-                  intensity = Math.max(0.15, Math.min(1, val / maxValues[activeMetric]));
+                  intensity = Math.max(0.2, Math.min(1, val / maxValues[activeMetric]));
                 }
                 
                 return `rgba(255, 90, 0, ${intensity})`; 
@@ -54,7 +60,7 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
                 <Geography key={geo.rsmKey} geography={geo} onClick={() => onStateClick(stateId)}
                   style={{
                     default: { fill: getHeatmapColor(), stroke: "#000", strokeWidth: 0.4, outline: "none" },
-                    hover: { fill: "#ff7a33", stroke: "#fff", strokeWidth: 1.5, cursor: "pointer", outline: "none" },
+                    hover: { fill: "#ff7a33", stroke: "#fff", strokeWidth: 2, cursor: "pointer", outline: "none" },
                     pressed: { fill: "#cc4800", outline: "none" },
                   }}
                 />
@@ -67,22 +73,18 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
             if (!stateData) return null;
             
             let displayValue = (activeMetric === 'cost' || activeMetric === 'cpm' || activeMetric === 'cpv') 
-                               ? `R$ ${stateData[activeMetric]}` : stateData[activeMetric];
+                               ? `R$ ${stateData[activeMetric]}` : abbreviateNum(stateData[activeMetric]);
             if (activeMetric === 'cost') displayValue = `R$ ${stateData.cost.split(',')[0]}`;
 
             return (
               <Marker key={id} coordinates={coords}>
-                <text y={-6} textAnchor="middle" fill="#fff" fontSize={10} className="font-black pointer-events-none drop-shadow-xl uppercase">{id}</text>
-                <text y={6} textAnchor="middle" fill="#ffd1b3" fontSize={7} className="font-bold pointer-events-none drop-shadow-xl italic">{displayValue}</text>
+                <text y={-6} textAnchor="middle" fill="#fff" fontSize={11} className="font-black pointer-events-none drop-shadow-2xl uppercase italic">{id}</text>
+                <text y={6} textAnchor="middle" fill="#ffd1b3" fontSize={8} className="font-black pointer-events-none drop-shadow-2xl italic">{displayValue}</text>
               </Marker>
             );
           })}
         </ZoomableGroup>
       </ComposableMap>
-      <div className="absolute bottom-4 left-6 flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-        <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-zinc-800"></span> Menor Performance</span>
-        <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#ff5a00]"></span> Maior Performance</span>
-      </div>
     </div>
   );
 }
