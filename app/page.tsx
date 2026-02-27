@@ -3,7 +3,6 @@
 import BrazilMap from "@/components/BrazilMap";
 import { useState } from "react";
 
-// Dados Oficiais do Google Ads (Nov 2025 - Fev 2026) atualizados com CPM
 const statesData: Record<string, { name: string; impressions: string; visualizations: string; cost: string; cpv: string; cpm: string }> = {
   "SP": { name: "São Paulo", impressions: "9.835.264", visualizations: "1.133.198", cost: "21.858,19", cpv: "0,02", cpm: "2,22" },
   "MG": { name: "Minas Gerais", impressions: "4.684.739", visualizations: "534.555", cost: "10.117,58", cpv: "0,02", cpm: "2,16" },
@@ -43,12 +42,17 @@ export default function Dashboard() {
   const parseValue = (val: string) => parseFloat(val.replace(/\./g, "").replace(",", "."));
 
   const metricLabels: Record<Metric, string> = {
-    impressions: "Impressões", 
-    visualizations: "Visualizações", 
-    cost: "Investimento", 
-    cpv: "CPV Médio",
-    cpm: "CPM Médio"
+    impressions: "Impressões", visualizations: "Visualizações", cost: "Investimento", cpv: "CPV", cpm: "CPM"
   };
+
+  // Lógica de Ranking: Se for CPV ou CPM, ordena do menor para o maior (melhor performance)
+  const topStates = Object.entries(statesData)
+    .sort(([, a], [, b]) => {
+      const valA = parseValue(a[activeMetric]);
+      const valB = parseValue(b[activeMetric]);
+      return (activeMetric === 'cpv' || activeMetric === 'cpm') ? valA - valB : valB - valA;
+    })
+    .slice(0, 5);
 
   const kpiClass = (metric: Metric) => 
     `cursor-pointer bg-[#1a1a1a] border p-5 rounded-xl transition-all ${
@@ -58,16 +62,14 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 p-6 md:p-10 font-sans">
       <div className="max-w-7xl mx-auto space-y-10">
-        
         <header className="border-b border-zinc-800 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black uppercase tracking-tighter text-[#ff5a00]">Desempenho - Saudade do Carai</h1>
-            <p className="text-zinc-500 font-medium mt-1">Sertões Petrobras • 21 de Nov. 2025 - 26 de Fev. 2026</p>
+            <p className="text-zinc-500 font-medium mt-1">Mari Fernandez • 21 de Nov. 2025 - 26 de Fev. 2026</p>
           </div>
-          <div className="bg-[#ff5a00] text-black px-4 py-1 rounded font-black text-xs tracking-tighter uppercase">Relatório Ads Oficial</div>
+          <div className="bg-[#ff5a00] text-black px-4 py-1 rounded font-black text-xs uppercase tracking-tighter">Dados Oficiais Google Ads</div>
         </header>
 
-        {/* KPIs Cabeçalho Clicáveis */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div onClick={() => setActiveMetric('impressions')} className={kpiClass('impressions')}>
             <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Impressões</h3>
@@ -83,60 +85,41 @@ export default function Dashboard() {
           </div>
           <div onClick={() => setActiveMetric('cpv')} className={kpiClass('cpv')}>
             <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">CPV Médio</h3>
-            <p className="text-2xl font-black text-emerald-400 text-center">R$ 0,02</p>
+            <p className="text-2xl font-black text-emerald-400">R$ 0,02</p>
           </div>
           <div onClick={() => setActiveMetric('cpm')} className={kpiClass('cpm')}>
-            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">CPM Médio</h3>
-            <p className="text-2xl font-black text-white text-center">R$ 2,04</p>
+            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">CPM Médio</h3>
+            <p className="text-2xl font-black text-white">R$ 2,04</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-[#111] p-6 rounded-2xl border border-zinc-800 shadow-2xl">
-            <h2 className="text-xs font-bold mb-6 uppercase tracking-widest text-zinc-500 text-center">Mapa de Calor: {metricLabels[activeMetric]}</h2>
-            <BrazilMap 
-              activeState={activeState} 
-              onStateClick={(id) => setActiveState(id)} 
-              data={statesData} 
-              activeMetric={activeMetric}
-            />
+            <h2 className="text-xs font-bold mb-6 uppercase tracking-widest text-zinc-500 text-center">Performance UF: {metricLabels[activeMetric]}</h2>
+            <BrazilMap activeState={activeState} onStateClick={(id) => setActiveState(id)} data={statesData} activeMetric={activeMetric} />
           </div>
 
           <div className="space-y-6">
-            {/* PAINEL DE DETALHES GIGANTE */}
-            <div className="bg-[#ff5a00] p-10 rounded-2xl shadow-2xl min-h-[350px] flex flex-col justify-center transition-all duration-500 text-white relative">
+            <div className="bg-[#ff5a00] p-10 rounded-2xl shadow-2xl min-h-[350px] flex flex-col justify-center transition-all text-white relative">
               {activeState && statesData[activeState] ? (
                 <div className="animate-in fade-in zoom-in-95 duration-300">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-black uppercase tracking-widest text-sm italic text-black/60">
-                      {statesData[activeState].name}
-                    </span>
+                    <span className="font-black uppercase tracking-widest text-sm italic text-black/60">{statesData[activeState].name}</span>
                     <button onClick={() => setActiveState(null)} className="text-black/40 hover:text-black font-bold text-xs underline uppercase tracking-tighter">Fechar</button>
                   </div>
-                  
-                  <h3 className="text-xs uppercase font-bold tracking-tighter mb-4 opacity-80">
-                    {metricLabels[activeMetric]} UF
-                  </h3>
-                  
+                  <h3 className="text-xs uppercase font-bold tracking-tighter mb-4 opacity-80">{metricLabels[activeMetric]} no Estado</h3>
                   <div className="flex items-baseline gap-2">
                     {(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && <span className="text-4xl font-bold">R$</span>}
-                    <p className="text-6xl md:text-8xl font-black tracking-tighter leading-none">
-                      {statesData[activeState][activeMetric]}
-                    </p>
+                    <p className="text-6xl md:text-8xl font-black tracking-tighter leading-none">{statesData[activeState][activeMetric]}</p>
                   </div>
-
-                  <div className="mt-10 pt-8 border-t border-white/20 grid grid-cols-3 gap-4">
+                  <div className="mt-10 pt-8 border-t border-white/20 grid grid-cols-2 gap-8">
                     <div>
-                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">Custo</p>
-                      <p className="text-xl font-black">R$ {statesData[activeState].cost}</p>
+                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">Investimento UF</p>
+                      <p className="text-2xl font-black">R$ {statesData[activeState].cost}</p>
                     </div>
                     <div>
-                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">Visualizações</p>
-                      <p className="text-xl font-black">{statesData[activeState].visualizations}</p>
-                    </div>
-                    <div>
-                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">CPM</p>
-                      <p className="text-xl font-black">R$ {statesData[activeState].cpm}</p>
+                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">CPM UF</p>
+                      <p className="text-2xl font-black">R$ {statesData[activeState].cpm}</p>
                     </div>
                   </div>
                 </div>
@@ -145,28 +128,21 @@ export default function Dashboard() {
                   <div className="p-4 rounded-full bg-white/10 animate-pulse">
                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
                   </div>
-                  <p className="text-center font-black uppercase text-lg tracking-tight leading-tight">Selecione um estado no mapa<br/>para expandir as métricas</p>
+                  <p className="text-center font-black uppercase text-lg tracking-tight">Selecione um estado no mapa<br/>para detalhar os números</p>
                 </div>
               )}
             </div>
 
-            {/* Ranking dos Maiores */}
-            <div className="bg-[#111] border border-zinc-800 p-6 rounded-2xl">
-              <h2 className="text-xs font-bold mb-6 text-zinc-500 uppercase tracking-widest">Maiores Performances ({metricLabels[activeMetric]})</h2>
+            <div className="bg-[#111] border border-zinc-800 p-6 rounded-2xl text-white">
+              <h2 className="text-xs font-bold mb-6 text-zinc-500 uppercase tracking-widest">Top Performance ({metricLabels[activeMetric]})</h2>
               <div className="space-y-3">
-                {Object.entries(statesData)
-                  .sort(([, a], [, b]) => parseValue(b[activeMetric]) - parseValue(a[activeMetric]))
-                  .slice(0, 5)
-                  .map(([id, state], i) => (
+                {topStates.map(([id, state], i) => (
                   <div key={id} onClick={() => setActiveState(id)} className={`cursor-pointer flex justify-between items-center p-4 rounded-xl transition-all border ${activeState === id ? 'bg-[#ff5a00]/10 border-[#ff5a00]' : 'bg-[#0a0a0a] border-zinc-800 hover:border-zinc-700'}`}>
                     <div className="flex items-center gap-3">
                       <span className="text-[#ff5a00] font-black italic">#{i+1}</span>
                       <span className="text-zinc-200 font-bold uppercase text-sm">{state.name}</span>
                     </div>
-                    <span className="text-white font-black tracking-tight uppercase">
-                      {(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && "R$ "}
-                      {state[activeMetric]}
-                    </span>
+                    <span className="font-black">{(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && "R$ "}{state[activeMetric]}</span>
                   </div>
                 ))}
               </div>

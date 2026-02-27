@@ -18,10 +18,8 @@ interface BrazilMapProps {
 export default function BrazilMap({ activeState, onStateClick, data, activeMetric }: BrazilMapProps) {
   const parseValue = (val: string) => parseFloat(String(val).replace(/\./g, "").replace(",", "."));
 
-  // Valores máximos do relatório para escala do Heatmap
-  const maxValues = {
-    impressions: 9835264, visualizations: 1133198, cost: 21858.19, cpv: 0.02, cpm: 2.52
-  };
+  const maxValues = { impressions: 9835264, visualizations: 1133198, cost: 21858.19, cpv: 0.02, cpm: 2.52 };
+  const minValues = { impressions: 0, visualizations: 0, cost: 0, cpv: 0.01, cpm: 1.71 };
 
   return (
     <div className="relative w-full h-[500px] bg-[#0c0c0c] rounded-lg border border-zinc-800 overflow-hidden cursor-grab active:cursor-grabbing">
@@ -29,17 +27,24 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
         <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={6}>
           <Geographies geography={brazilTopoJson}>
             {({ geographies }) => geographies.map((geo) => {
-              const rawId = geo.properties.HASC_1 || geo.id || "";
-              const stateId = String(rawId).replace("BR.", "").replace("BR-", "");
-              const isActive = activeState === stateId;
+              const stateId = String(geo.properties.HASC_1 || geo.id || "").replace("BR.", "").replace("BR-", "");
               const stateData = data[stateId];
               
               const getHeatmapColor = () => {
-                if (isActive) return "#ffffff"; 
+                if (activeState === stateId) return "#ffffff"; 
                 if (!stateData) return "#1a1a1a";
                 const val = parseValue(stateData[activeMetric]);
-                // Para CPM e CPV, a intensidade é baseada na escala real
-                const intensity = Math.max(0.15, Math.min(1, val / maxValues[activeMetric]));
+                
+                let intensity;
+                // INVERSÃO: Para CPV e CPM, valores MENORES são mais laranjas (melhor performance)
+                if (activeMetric === 'cpv' || activeMetric === 'cpm') {
+                  const range = maxValues[activeMetric] - minValues[activeMetric];
+                  intensity = range === 0 ? 0.8 : 1 - ((val - minValues[activeMetric]) / range);
+                  intensity = Math.max(0.15, Math.min(1, intensity));
+                } else {
+                  intensity = Math.max(0.15, Math.min(1, val / maxValues[activeMetric]));
+                }
+                
                 return `rgba(255, 90, 0, ${intensity})`; 
               };
 
@@ -58,19 +63,14 @@ export default function BrazilMap({ activeState, onStateClick, data, activeMetri
           {Object.entries(stateCenters).map(([id, coords]) => {
             const stateData = data[id];
             if (!stateData) return null;
-            
-            let displayValue = stateData[activeMetric];
-            if (activeMetric === 'cost' || activeMetric === 'cpm') displayValue = `R$ ${stateData[activeMetric]}`;
+            let displayValue = (activeMetric === 'cost' || activeMetric === 'cpm' || activeMetric === 'cpv') 
+                               ? `R$ ${stateData[activeMetric]}` : stateData[activeMetric];
             if (activeMetric === 'cost') displayValue = `R$ ${stateData.cost.split(',')[0]}`;
 
             return (
               <Marker key={id} coordinates={coords}>
-                <text y={-5} textAnchor="middle" fill="#fff" fontSize={9} className="font-black pointer-events-none drop-shadow-md uppercase">
-                    {id}
-                </text>
-                <text y={5} textAnchor="middle" fill="#ffd1b3" fontSize={6} className="font-bold pointer-events-none drop-shadow-md">
-                  {displayValue}
-                </text>
+                <text y={-5} textAnchor="middle" fill="#fff" fontSize={9} className="font-black pointer-events-none uppercase">{id}</text>
+                <text y={5} textAnchor="middle" fill="#ffd1b3" fontSize={6} className="font-bold pointer-events-none uppercase">{displayValue}</text>
               </Marker>
             );
           })}
