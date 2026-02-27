@@ -3,6 +3,7 @@
 import BrazilMap from "@/components/BrazilMap";
 import { useState } from "react";
 
+// Dados Oficiais Google Ads (Nov 2025 - Fev 2026) consolidados com CPM e CPV por estado
 const statesData: Record<string, { name: string; impressions: string; visualizations: string; cost: string; cpv: string; cpm: string }> = {
   "SP": { name: "São Paulo", impressions: "9.835.264", visualizations: "1.133.198", cost: "21.858,19", cpv: "0,02", cpm: "2,22" },
   "MG": { name: "Minas Gerais", impressions: "4.684.739", visualizations: "534.555", cost: "10.117,58", cpv: "0,02", cpm: "2,16" },
@@ -37,7 +38,7 @@ type Metric = 'impressions' | 'visualizations' | 'cost' | 'cpv' | 'cpm';
 
 export default function Dashboard() {
   const [activeState, setActiveState] = useState<string | null>(null);
-  const [activeMetric, setActiveMetric] = useState<Metric>('cost');
+  const [activeMetric, setActiveMetric] = useState<Metric>('visualizations');
 
   const parseValue = (val: string) => parseFloat(val.replace(/\./g, "").replace(",", "."));
 
@@ -45,7 +46,7 @@ export default function Dashboard() {
     impressions: "Impressões", visualizations: "Visualizações", cost: "Investimento", cpv: "CPV", cpm: "CPM"
   };
 
-  // Lógica de Ranking: Se for CPV ou CPM, ordena do menor para o maior (melhor performance)
+  // Ranking com lógica invertida para custo (menor valor = melhor performance no topo)
   const topStates = Object.entries(statesData)
     .sort(([, a], [, b]) => {
       const valA = parseValue(a[activeMetric]);
@@ -54,95 +55,136 @@ export default function Dashboard() {
     })
     .slice(0, 5);
 
-  const kpiClass = (metric: Metric) => 
-    `cursor-pointer bg-[#1a1a1a] border p-5 rounded-xl transition-all ${
-      activeMetric === metric ? 'border-[#ff5a00] ring-1 ring-[#ff5a00]' : 'border-zinc-800 hover:border-zinc-700'
+  const kpiClass = (isActive: boolean) => 
+    `cursor-pointer bg-[#111] border p-6 rounded-2xl transition-all duration-300 ${
+      isActive ? 'border-[#ff5a00] bg-zinc-900 shadow-[0_0_20px_rgba(255,90,0,0.1)]' : 'border-zinc-800 hover:border-zinc-600'
     }`;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 p-6 md:p-10 font-sans">
-      <div className="max-w-7xl mx-auto space-y-10">
-        <header className="border-b border-zinc-800 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="min-h-screen bg-[#050505] text-zinc-100 p-6 md:p-10 font-sans selection:bg-[#ff5a00] selection:text-white">
+      <div className="max-w-7xl mx-auto space-y-12">
+        
+        {/* HEADER EXECUTIVO */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-900 pb-10">
           <div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-[#ff5a00]">Desempenho - Saudade do Carai</h1>
-            <p className="text-zinc-500 font-medium mt-1">Mari Fernandez • 21 de Nov. 2025 - 26 de Fev. 2026</p>
+            <h1 className="text-5xl font-black uppercase tracking-tighter text-[#ff5a00]">Desempenho - Saudade do Carai</h1>
+            <p className="text-zinc-500 font-bold mt-2 text-sm tracking-widest uppercase">
+              Mari Fernandez • BI Analytics • 21/11/2025 - 26/02/2026
+            </p>
           </div>
-          <div className="bg-[#ff5a00] text-black px-4 py-1 rounded font-black text-xs uppercase tracking-tighter">Dados Oficiais Google Ads</div>
+          <div className="flex gap-3">
+            <div className="bg-[#111] border border-zinc-800 px-6 py-3 rounded-xl text-center">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Uplift Orgânico</p>
+              <p className="text-2xl font-black text-emerald-400">1 : 4.1</p>
+            </div>
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div onClick={() => setActiveMetric('impressions')} className={kpiClass('impressions')}>
-            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Impressões</h3>
-            <p className="text-2xl font-black">63.856.843</p>
+        {/* KPIs DE ALTA PERFORMANCE */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div onClick={() => setActiveMetric('visualizations')} className={kpiClass(activeMetric === 'visualizations')}>
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Visualizações Totais</h3>
+            <p className="text-3xl font-black">37.685.527</p>
+            <p className="text-[10px] text-zinc-600 mt-1 font-medium">80,6% ORGÂNICO</p>
           </div>
-          <div onClick={() => setActiveMetric('visualizations')} className={kpiClass('visualizations')}>
-            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Visualizações</h3>
-            <p className="text-2xl font-black">7.301.529</p>
+          <div className={kpiClass(false)}>
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Views em Playlists</h3>
+            <p className="text-3xl font-black text-white">17.255.336</p>
+            <p className="text-[10px] text-[#ff5a00] mt-1 font-bold">45,7% DO TRÁFEGO</p>
           </div>
-          <div onClick={() => setActiveMetric('cost')} className={kpiClass('cost')}>
-            <h3 className="text-[9px] font-bold text-[#ff5a00] uppercase tracking-widest mb-1">Investimento</h3>
-            <p className="text-2xl font-black text-[#ff5a00]">R$ 130.432,92</p>
+          <div onClick={() => setActiveMetric('cost')} className={kpiClass(activeMetric === 'cost')}>
+            <h3 className="text-[10px] font-bold text-[#ff5a00] uppercase tracking-widest mb-2">Investimento Ads</h3>
+            <p className="text-3xl font-black text-[#ff5a00]">R$ 130.432,92</p>
+            <p className="text-[10px] text-zinc-600 mt-1 font-medium italic">7,3M VIEWS PAGAS</p>
           </div>
-          <div onClick={() => setActiveMetric('cpv')} className={kpiClass('cpv')}>
-            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">CPV Médio</h3>
-            <p className="text-2xl font-black text-emerald-400">R$ 0,02</p>
+          <div onClick={() => setActiveMetric('cpv')} className={kpiClass(activeMetric === 'cpv')}>
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">CPV Real (Total)</h3>
+            <p className="text-3xl font-black text-emerald-400">R$ 0,003</p>
+            <p className="text-[10px] text-zinc-600 mt-1 font-medium">EFICIÊNCIA MÁXIMA</p>
           </div>
-          <div onClick={() => setActiveMetric('cpm')} className={kpiClass('cpm')}>
-            <h3 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">CPM Médio</h3>
-            <p className="text-2xl font-black text-white">R$ 2,04</p>
+          <div onClick={() => setActiveMetric('cpm')} className={kpiClass(activeMetric === 'cpm')}>
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">CPM Real (Total)</h3>
+            <p className="text-3xl font-black text-white">R$ 1,18</p>
+            <p className="text-[10px] text-zinc-600 mt-1 font-medium">110M IMPRESSÕES</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-[#111] p-6 rounded-2xl border border-zinc-800 shadow-2xl">
-            <h2 className="text-xs font-bold mb-6 uppercase tracking-widest text-zinc-500 text-center">Performance UF: {metricLabels[activeMetric]}</h2>
-            <BrazilMap activeState={activeState} onStateClick={(id) => setActiveState(id)} data={statesData} activeMetric={activeMetric} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* MAPA COM HEATMAP */}
+          <div className="bg-[#111] p-8 rounded-3xl border border-zinc-900 shadow-2xl">
+            <div className="flex justify-between items-start mb-8">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400 italic">Análise de Calor Geográfico</h2>
+              <span className="text-[10px] bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full font-bold uppercase">{metricLabels[activeMetric]}</span>
+            </div>
+            <BrazilMap 
+              activeState={activeState} 
+              onStateClick={(id) => setActiveState(id)} 
+              data={statesData} 
+              activeMetric={activeMetric}
+            />
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-[#ff5a00] p-10 rounded-2xl shadow-2xl min-h-[350px] flex flex-col justify-center transition-all text-white relative">
+          <div className="space-y-8">
+            {/* PAINEL DE DETALHES GIGANTE */}
+            <div className="bg-[#ff5a00] p-12 rounded-3xl shadow-[0_20px_50px_rgba(255,90,0,0.2)] min-h-[380px] flex flex-col justify-center transition-all duration-700 text-white relative overflow-hidden group">
               {activeState && statesData[activeState] ? (
-                <div className="animate-in fade-in zoom-in-95 duration-300">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-black uppercase tracking-widest text-sm italic text-black/60">{statesData[activeState].name}</span>
-                    <button onClick={() => setActiveState(null)} className="text-black/40 hover:text-black font-bold text-xs underline uppercase tracking-tighter">Fechar</button>
+                <div className="animate-in fade-in zoom-in-95 slide-in-from-bottom-6 duration-500">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="font-black uppercase tracking-widest text-lg italic text-black/40">{statesData[activeState].name}</span>
+                    <button onClick={() => setActiveState(null)} className="text-black/30 hover:text-black font-black text-xs underline uppercase tracking-tighter">Fechar Detalhes</button>
                   </div>
-                  <h3 className="text-xs uppercase font-bold tracking-tighter mb-4 opacity-80">{metricLabels[activeMetric]} no Estado</h3>
-                  <div className="flex items-baseline gap-2">
-                    {(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && <span className="text-4xl font-bold">R$</span>}
-                    <p className="text-6xl md:text-8xl font-black tracking-tighter leading-none">{statesData[activeState][activeMetric]}</p>
+                  
+                  <h3 className="text-xs uppercase font-bold tracking-[0.2em] mb-4 opacity-70 italic">{metricLabels[activeMetric]} no Estado</h3>
+                  
+                  <div className="flex items-baseline gap-3">
+                    {(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && <span className="text-5xl font-black">R$</span>}
+                    <p className="text-8xl md:text-9xl font-black tracking-tighter leading-none drop-shadow-2xl">
+                      {statesData[activeState][activeMetric]}
+                    </p>
                   </div>
-                  <div className="mt-10 pt-8 border-t border-white/20 grid grid-cols-2 gap-8">
+
+                  <div className="mt-12 pt-10 border-t border-white/20 grid grid-cols-3 gap-10">
                     <div>
-                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">Investimento UF</p>
+                      <p className="text-black/40 text-[10px] uppercase font-black tracking-widest mb-2 italic">Investimento</p>
                       <p className="text-2xl font-black">R$ {statesData[activeState].cost}</p>
                     </div>
                     <div>
-                      <p className="text-black/50 text-[10px] uppercase font-black tracking-widest mb-1">CPM UF</p>
+                      <p className="text-black/40 text-[10px] uppercase font-black tracking-widest mb-2 italic">Views Ads</p>
+                      <p className="text-2xl font-black">{statesData[activeState].visualizations}</p>
+                    </div>
+                    <div>
+                      <p className="text-black/40 text-[10px] uppercase font-black tracking-widest mb-2 italic">CPM</p>
                       <p className="text-2xl font-black">R$ {statesData[activeState].cpm}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center space-y-6 py-10">
-                  <div className="p-4 rounded-full bg-white/10 animate-pulse">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                <div className="h-full flex flex-col items-center justify-center space-y-8 py-10">
+                  <div className="p-6 rounded-full bg-white/10 ring-8 ring-white/5 animate-pulse">
+                    <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
                   </div>
-                  <p className="text-center font-black uppercase text-lg tracking-tight">Selecione um estado no mapa<br/>para detalhar os números</p>
+                  <div className="text-center">
+                    <p className="font-black uppercase text-2xl tracking-tighter">Visão Detalhada</p>
+                    <p className="text-sm font-bold opacity-60 uppercase tracking-widest mt-2">Toque em um estado no mapa para expandir</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="bg-[#111] border border-zinc-800 p-6 rounded-2xl text-white">
-              <h2 className="text-xs font-bold mb-6 text-zinc-500 uppercase tracking-widest">Top Performance ({metricLabels[activeMetric]})</h2>
-              <div className="space-y-3">
+            {/* RANKING DE PERFORMANCE */}
+            <div className="bg-[#111] border border-zinc-900 p-8 rounded-3xl shadow-xl">
+              <h2 className="text-xs font-bold mb-8 text-zinc-500 uppercase tracking-[0.3em] italic">Top Performance de Campanha</h2>
+              <div className="space-y-4">
                 {topStates.map(([id, state], i) => (
-                  <div key={id} onClick={() => setActiveState(id)} className={`cursor-pointer flex justify-between items-center p-4 rounded-xl transition-all border ${activeState === id ? 'bg-[#ff5a00]/10 border-[#ff5a00]' : 'bg-[#0a0a0a] border-zinc-800 hover:border-zinc-700'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#ff5a00] font-black italic">#{i+1}</span>
-                      <span className="text-zinc-200 font-bold uppercase text-sm">{state.name}</span>
+                  <div key={id} onClick={() => setActiveState(id)} className={`cursor-pointer flex justify-between items-center p-5 rounded-2xl transition-all duration-300 border ${activeState === id ? 'bg-[#ff5a00] border-transparent scale-105' : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-600'}`}>
+                    <div className="flex items-center gap-5">
+                      <span className={`font-black italic text-xl ${activeState === id ? 'text-black/50' : 'text-[#ff5a00]'}`}>#{i+1}</span>
+                      <span className={`font-black uppercase text-sm tracking-widest ${activeState === id ? 'text-white' : 'text-zinc-300'}`}>{state.name}</span>
                     </div>
-                    <span className="font-black">{(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && "R$ "}{state[activeMetric]}</span>
+                    <span className={`font-black text-lg ${activeState === id ? 'text-white' : 'text-zinc-100'}`}>
+                      {(activeMetric === 'cost' || activeMetric === 'cpv' || activeMetric === 'cpm') && "R$ "}
+                      {state[activeMetric]}
+                    </span>
                   </div>
                 ))}
               </div>
