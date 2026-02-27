@@ -57,7 +57,7 @@ export default function Dashboard() {
         {/* Título Atualizado */}
         <header className="border-b border-zinc-800 pb-8">
           <h1 className="text-4xl font-black uppercase tracking-tighter text-[#ff5a00]">Desempenho - Saudade do Carai</h1>
-          <p className="text-zinc-500 font-medium mt-1 uppercase text-xs tracking-widest">Relatório Analítico • Sertões Petrobras</p>
+          <p className="text-zinc-500 font-medium mt-1 uppercase text-xs tracking-widest">Relatório Analítico • Google ADS</p>
         </header>
 
         {/* KPIs Cabeçalho */}
